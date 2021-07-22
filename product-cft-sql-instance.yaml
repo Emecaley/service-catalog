@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  AmiId:
+    Description: Enter the AMI for your Instance
+    Type: String
+  InstanceName:
+    Default: windows-instance-mysql
+    Description: Name of your instance; appears under Name in EC2 console.
+    Type: String
+  InstanceType:
+    Description: Amazon EC2 instance types available
+    Type: String
+    Default: t3.large
+    AllowedValues:
+      - t3.medium
+      - t3.large
+      - m5.large
+      - m5.xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  RootVolumeSize:
+    Type: Number
+    Description: Size of the EBS Root volume
+    MinValue: 100
+    MaxValue: 500
+  VpcSubnet:
+    Type: 'AWS::EC2::Subnet::Id'
+    Description: SubnetId in VPC
+    Default: subnet-0e994488066d84435
+  Service:
+    Type: String
+    Description: Value of tag
+    Default: dev
+  CostCenter:
+    Description: Choose your associated cost center for your department.
+    Type: String
+    AllowedValues:
+      - TM8055906
+      - BS8075962
+      - DF8075938
+      - JH8075973
+      - IU8085911
+      - OP8075981
+      - US8025949
+  Department:
+    Description: Choose your department acronym; will aid reporting and untilization.
+    Type: String
+    AllowedValues:
+      - TS
+      - CE
+      - FS
+      - AF
+      - PS
+      - PM
+      - SE
+  CreatedBy:
+    Type: String
+    Description: Specify your name; appears as value for 'created-by' Tag in EC2 console.
+  Source:
+    Type: String
+    Description: Source for instance; appears as value for 'source' Tag in EC2 console.
+  Description:
+    Type: String
+    Description: Purpose of this instance; appears as value for 'description' Tag in EC2 console.
+Resources:
+  MyWindowsInstance:
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      LaunchTemplate:
+        LaunchTemplateId: !Ref RequiredTagsTemplate
+        Version: 1
+      SubnetId: !Ref VpcSubnet
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: 'false'
+            VolumeSize: !Ref RootVolumeSize
+    Type: 'AWS::EC2::Instance'
+  RequiredTagsTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: Name
+                Value: !Ref InstanceName
+              - Key: Service
+                Value: !Ref Service
+              - Key: cost-center
+                Value: !Ref CostCenter
+              - Key: created-by
+                Value: !Ref CreatedBy
+              - Key: department
+                Value: !Ref Department
+              - Key: description
+                Value: !Ref Description
+              - Key: source
+                Value: !Ref Source
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Ref InstanceName
+              - Key: Service
+                Value: !Ref Service
+              - Key: cost-center
+                Value: !Ref CostCenter
+              - Key: created-by
+                Value: !Ref CreatedBy
+              - Key: department
+                Value: !Ref Department
+              - Key: description
+                Value: !Ref Description
+              - Key: source
+                Value: !Ref Source
+Outputs:
+  EC2InstancePublicIP:
+    Description: Public IP of EC2 instance
+    Value: !GetAtt MyWindowsInstance.PublicIp
+  EC2InstancePrivateIP:
+    Description: Private IP of EC2 instance
+    Value: !GetAtt MyWindowsInstance.PrivateIp
